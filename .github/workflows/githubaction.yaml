@@ -1,130 +1,109 @@
-name: CI/CD Pipeline
-
+name: ci-cd
 on:
   push:
-    branches: [ main ]
-    paths-ignore:
-      - 'kubernetes/deployment.yaml'  # Ignore changes to this file to prevent loops
-  pull_request:
-    branches: [ main ]
-
+    branches:[ main ]
+  path-ignore:
+    - kubernetes
 jobs:
   test:
     name: Unit Testing
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: checkout repository
         uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: install node js
+        uses: actions/set-up-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run tests
-        run: npm test || echo "No tests found, would add tests in a real project"
-
-  lint:
-    name: Static Code Analysis
+      - name: download dependencies
+        run: npm install
+      - name: test
+        run: npm test 
+  static-cde:
+    name: static code analysis
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: checkout repository
         uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: install node js
+        uses: actions/setip-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Run ESLint
+      - name: download dependencies
+        run: npm install
+
+      - name: npm lint
         run: npm run lint
-
   build:
-    name: Build
+    name: build
+    needs: [test,lint]
     runs-on: ubuntu-latest
-    needs: [test, lint]
     steps:
-      - name: Checkout code
+      - name: checkout repository
         uses: actions/checkout@v4
-      
-      - name: Setup Node.js
+      - name: install node js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
-      - name: Install dependencies
-        run: npm ci
-      
-      - name: Build project
-        run: npm run build
-      
-      - name: Upload build artifacts
+      - name: download dependencies
+        run:
+          npm install
+      - name: build
+        run:
+          npm run build
+      - name: artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifacts
+          name: buil-artifacts
           path: dist/
-
   docker:
-    name: Docker Build and Push
-    runs-on: ubuntu-latest
+    name: build and push
     needs: [build]
+    runs-on: ubuntu-latest
     env:
-      REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository }}
+      registry: gcr.io
+      image: ${{github.repository}}
     outputs:
-      image_tag: ${{ steps.set_output.outputs.image_tag }}
+      image_tag: ${{steps.set_outputs.outputs.image_tag}}
     steps:
-      - name: Checkout code
+      - name:  checkout repository
         uses: actions/checkout@v4
-      
-      - name: Download build artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-artifacts
+          name: build-artifact
           path: dist/
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Login to GitHub Container Registry
+      - name: login guthub container registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.TOKEN }}
-      
-      - name: Extract metadata for Docker
+          registry: ${{env.registry}}
+          username: ${{github.actor}}
+          password: ${{secrets.TOKEN}}
+
+      - name: extract metadata for docker
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{env.registry}}/${{env.image}}
           tags: |
             type=sha,format=long
             type=ref,event=branch
             latest
-      
-      - name: Build Docker image
+      - name: build docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{steps.meta.outputs.tags}}
+          labels: ${{ steps.meta.outputs.labels}}
           load: true
-      
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
+          image-ref: ${{ env.registry }}/${{ env.image }}:sha-${{ github.sha }}
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
@@ -180,3 +159,7 @@ jobs:
           git add kubernetes/deployment.yaml
           git commit -m "Update Kubernetes deployment with new image tag: ${{ needs.docker.outputs.image_tag }} [skip ci]" || echo "No changes to commit"
           git push
+
+
+
+
