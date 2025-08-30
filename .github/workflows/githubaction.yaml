@@ -2,8 +2,8 @@ name: ci-cd
 on:
   push:
     branches: [ main ]
-  paths-ignore:
-    - kubernetes
+    paths-ignore:
+      - 'kubernetes'
 jobs:
   test:
     name: Unit Testing
