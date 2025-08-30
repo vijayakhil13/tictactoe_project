@@ -64,7 +64,7 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     env:
-      registry: gcr.io
+      registry: ghcr.io
       image: ${{github.repository}}
     outputs:
       image_tag: ${{steps.set_outputs.outputs.image_tag}}
