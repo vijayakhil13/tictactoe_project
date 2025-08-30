@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: tictactoe
-        image: gcr.io/vijayakhil13/tictactoe:latest
+        image: ghcr.io/vijayakhil13/tictactoe:latest
         ports:
         - containerPort: 80
         imagePullPolicy: Always
