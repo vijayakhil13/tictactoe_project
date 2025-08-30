@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: tictactoe
-        image: ghcr.io/vijayakhil13/tictactoe_project:sha-6546fdc5b090795888b140de8c1d670afaabc80f
+        image: ghcr.io/vijayakhil13/tictactoe_project:sha-c52248af1941f3e4a0fb58f4bf2653a9dbaa22c0
         ports:
         - containerPort: 80
         imagePullPolicy: Always
