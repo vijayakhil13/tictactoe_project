@@ -20,7 +20,7 @@ jobs:
         run: npm install
       - name: test
         run: npm test 
-  static-cde:
+  lint:
     name: static code analysis
     runs-on: ubuntu-latest
     steps:
